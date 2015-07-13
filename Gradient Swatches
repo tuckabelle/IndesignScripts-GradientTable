@@ -1,0 +1,393 @@
+// Show dialog
+if (app.version == 3) {
+	app.userInteractionLevel = UserInteractionLevels.interactWithAll;
+} else {
+	app.scriptPreferences.userInteractionLevel = UserInteractionLevels.interactWithAll;
+}
+
+// Default Preferences
+var redStart = 0;
+var greenStart = 0;
+var blueStart = 0;
+var redEnd = 200;
+var greenEnd = 200;
+var blueEnd = 200;
+var steps = 4;
+var tableHeight = 0;
+var colorName = "";
+
+// Needed variables to start
+var theDoc = app.activeDocument;
+var units = theDoc.viewPreferences.verticalMeasurementUnits;
+var pgHeight = theDoc.documentPreferences.pageHeight;
+var pgWidth = theDoc.documentPreferences.pageWidth;
+var pgMarginTop = theDoc.marginPreferences.top;
+var pgMarginLeft = theDoc.marginPreferences.left;
+var pgMarginRight = theDoc.marginPreferences.right;
+var pgMarginBottom = theDoc.marginPreferences.bottom;
+
+// Check if preferences file exists and load it, if not save one
+var prefsFile = File((Folder(app.activeScript)).parent + "/GradientMakerPrefs.txt");
+if (!prefsFile.exists)
+	savePrefs();
+else
+	readPrefs();
+
+do {
+	var theDialog = createDialog();
+	if (!(theDialog.show()))
+		exit();
+
+	var startT = new Date();
+
+	// Read the dialog info
+	var NEWredStart = Number(NEWredStart.editContents);
+	var NEWgreenStart = Number(NEWgreenStart.editContents);
+	var NEWblueStart = Number(NEWblueStart.editContents);
+	var NEWredEnd = Number(NEWredEnd.editContents);
+	var NEWgreenEnd = Number(NEWgreenEnd.editContents);
+	var NEWblueEnd = Number(NEWblueEnd.editContents);
+	var NEWsteps = Number(NEWsteps.editContents);
+	var NEWtableHeight = Number(NEWtableHeight.editContents);
+	var NEWcolorName = String(NEWcolorName.editContents);
+
+	// Check for erroneous input
+	if (isNaN(NEWredStart) || isNaN(NEWgreenStart) || isNaN(NEWblueStart) ||
+		isNaN(NEWredEnd) || isNaN(NEWgreenEnd) || isNaN(NEWblueEnd) ||
+		isNaN(NEWsteps) || isNaN(NEWtableHeight)) {
+		alert("Non-numeric entered. Please try again.");
+		theDialog.destroy();
+	} else
+		break;
+} while (true);
+
+theDialog.destroy();
+
+// Use the entered data if it checks out
+redStart = NEWredStart;
+greenStart = NEWgreenStart;
+blueStart = NEWblueStart;
+
+redEnd = NEWredEnd;
+greenEnd = NEWgreenEnd;
+blueEnd = NEWblueEnd;
+
+steps = NEWsteps;
+tableHeight = NEWtableHeight;
+colorName = NEWcolorName;
+savePrefs();
+
+var numColorsChanging = 0;
+
+// Table Calculations
+var xPosition = 0;
+var yPosition = 0;
+var page = 0;
+
+// Set the origin to be per page and to be 0,0
+theDoc.viewPreferences.rulerOrigin = RulerOrigin.pageOrigin;
+theDoc.zeroPoint = [0, 0];
+
+// Create a color array
+var colorArray = [];
+var NEWcolorArray = [];
+colorArray.push(addColor(NEWredStart, NEWgreenStart, NEWblueStart));
+
+// Caluculate each shade and add to color array
+for (i = 0; i <= NEWsteps; i++) {
+	var Red = Math.round(interpolate(NEWredStart, NEWredEnd, i, NEWsteps));
+	var Green = Math.round(interpolate(NEWgreenStart, NEWgreenEnd, i, NEWsteps));
+	var Blue = Math.round(interpolate(NEWblueStart, NEWblueEnd, i, NEWsteps));
+
+	// return the interpolated value between pBegin and pEnd
+	function interpolate(pBegin, pEnd, pStep, pMax) {
+		if (pBegin < pEnd) {
+			return ((pEnd - pBegin) * (pStep / pMax)) + pBegin;
+		} else {
+			return ((pBegin - pEnd) * (1 - (pStep / pMax))) + pEnd;
+		}
+	}
+	colorArray.push(addColor(Red, Green, Blue));
+}
+
+// Eliminate duplicates from the color array
+NEWcolorArray = eliminateDuplicates(colorArray);
+
+// Add first color to the color array
+addColor(NEWredEnd, NEWgreenEnd, NEWblueEnd);
+
+// Create textFrame
+var y1 = app.activeDocument.marginPreferences.top;
+var x1 = app.activeDocument.marginPreferences.left;
+var y2 = app.activeDocument.documentPreferences.pageHeight - app.activeDocument.marginPreferences.bottom;
+var x2 = app.activeDocument.documentPreferences.pageWidth - app.activeDocument.marginPreferences.right;
+var textFrame = app.activeDocument.textFrames.add({
+	geometricBounds: [y1, x1, y2, x2]
+});
+
+// Add table to text frame
+var columnCount = Number(NEWcolorArray.length + 1);
+var gradientTable = textFrame.insertionPoints[0].tables.add(undefined, undefined, {
+	bodyRowCount: 1,
+	columnCount: columnCount
+});
+gradientTable.rows.everyItem().properties = {
+	autoGrow: false,
+	height: NEWtableHeight
+};
+gradientTable.columns.everyItem().verticalJustification = VerticalJustification.CENTER_ALIGN;
+gradientTable.columns[0].cells[0].contents = String(NEWcolorName);
+gradientTable.columns[0].cells[0].properties = {
+	autoGrow: false,
+	width: .5
+};
+gradientTable.bottomBorderStrokeColor = "Black";
+gradientTable.topBorderStrokeColor = "Black";
+gradientTable.leftBorderStrokeColor = "Black";
+gradientTable.rightBorderStrokeColor = "Black";
+gradientTable.bottomBorderStrokeWeight = 0.25;
+gradientTable.topBorderStrokeWeight = 0.25;
+gradientTable.leftBorderStrokeWeight = 0.25;
+gradientTable.rightBorderStrokeWeight = 0.25;
+
+// Settings for the first column
+gradientTable.columns[0].cells[0].rotationAngle = 270;
+gradientTable.columns[0].cells[0].fillColor = "Paper";
+var myTitleString = gradientTable.columns[0].cells.item(0).characters.everyItem();
+myTitleString.pointSize = 16;
+myTitleString.appliedFont = "Calibri";
+myTitleString.justification = Justification.centerAlign;
+
+// Cell Settings
+for (i = 0; i <= NEWcolorArray.length; i++) {
+	var newColor = app.activeDocument.swatches.item(String(NEWcolorArray[i]));
+	if (NEWcolorArray[i] != undefined) {
+		gradientTable.columns[i + 1].contents = NEWcolorArray[i];
+		gradientTable.columns[i + 1].fillColor = newColor;
+
+		var brightness = calcBrightness(NEWcolorArray[i]);
+		if (brightness <= 130) {
+			gradientTable.columns[i + 1].cells[0].rightEdgeStrokeColor = theDoc.colors.item("Paper");
+			gradientTable.columns[i + 1].cells[0].rightEdgeStrokeWeight = 0.25;
+		} else {
+			gradientTable.columns[i + 1].cells[0].rightEdgeStrokeColor = theDoc.colors.item("Black");
+			gradientTable.columns[i + 1].cells[0].rightEdgeStrokeWeight = 0.25;
+		}
+
+		// Text Settings 
+		var myString = gradientTable.columns[i + 1].cells.item(0).characters.everyItem();
+		myString.pointSize = 16;
+		myString.appliedFont = "Calibri";
+		myString.justification = Justification.centerAlign;
+		var brightness = calcBrightness(NEWcolorArray[i]);
+		if (brightness <= 130) {
+			myString.fillColor = theDoc.colors.item("Paper");
+		} else {
+			myString.fillColor = theDoc.colors.item("Black");
+		}
+
+	}
+}
+
+// Fit Frame to Table
+textFrame.fit(FitOptions.FRAME_TO_CONTENT);
+
+// Exit
+var endT = new Date();
+exit();
+
+// Create the dialog ------------------------------------------------------
+function createDialog() {
+	var tempDialog = app.dialogs.add({
+		name: "Swatch Gradient",
+		canCancel: true
+	});
+	with(tempDialog) {
+		with(dialogColumns.add()) {
+			with(dialogRows.add()) {
+				staticTexts.add({
+					staticLabel: "Name"
+				});
+				NEWcolorName = textEditboxes.add({
+					editContents: "" + colorName,
+					minWidth: 150
+				});
+			}
+			with(dialogRows.add())
+
+			staticTexts.add({
+				staticLabel: "Start Color"
+			});
+			with(borderPanels.add()) {
+
+				with(dialogColumns.add()) {
+					with(dialogRows.add()) {
+						staticTexts.add({
+							staticLabel: "R"
+						});
+						NEWredStart = textEditboxes.add({
+							editContents: "" + redStart,
+							minWidth: 30
+						});
+						staticTexts.add({
+							staticLabel: "G"
+						});
+						NEWgreenStart = textEditboxes.add({
+							editContents: "" + greenStart,
+							minWidth: 30
+						});
+						staticTexts.add({
+							staticLabel: "B"
+						});
+						NEWblueStart = textEditboxes.add({
+							editContents: "" + blueStart,
+							minWidth: 30
+						});
+					}
+				}
+			}
+			with(dialogRows.add())
+			staticTexts.add({
+				staticLabel: "End Color"
+			});
+			with(borderPanels.add()) {
+				with(dialogColumns.add()) {
+					with(dialogRows.add()) {
+						staticTexts.add({
+							staticLabel: "R"
+						});
+						NEWredEnd = textEditboxes.add({
+							editContents: "" + redEnd,
+							minWidth: 30
+						});
+						staticTexts.add({
+							staticLabel: "G"
+						});
+						NEWgreenEnd = textEditboxes.add({
+							editContents: "" + greenEnd,
+							minWidth: 30
+						});
+						staticTexts.add({
+							staticLabel: "B"
+						});
+						NEWblueEnd = textEditboxes.add({
+							editContents: "" + blueEnd,
+							minWidth: 30
+						});
+					}
+				}
+			}
+
+			with(dialogRows.add()) {
+				staticTexts.add({
+					staticLabel: "Number of Steps"
+				});
+				NEWsteps = textEditboxes.add({
+					editContents: "" + steps,
+					minWidth: 30
+				});
+			}
+			with(dialogRows.add()) {
+				staticTexts.add({
+					staticLabel: "Table Height"
+				});
+				NEWtableHeight = textEditboxes.add({
+					editContents: "" + tableHeight,
+					minWidth: 30
+				});
+			}
+		}
+	}
+	return tempDialog;
+}
+
+// Save preferences to a text file  ------------------------------------------------------
+function savePrefs() {
+	var newPrefs =
+
+		redStart + "\n" +
+		greenStart + "\n" +
+		blueStart + "\n" +
+
+		redEnd + "\n" +
+		greenEnd + "\n" +
+		blueEnd + "\n" +
+
+		steps + "\n" +
+		tableHeight
+
+	prefsFile.open("w");
+	prefsFile.write(newPrefs);
+
+	prefsFile.close();
+}
+
+// Read the preferences from a text file  ------------------------------------------------------
+function readPrefs() {
+	prefsFile.open("r");
+
+	redStart = Number(prefsFile.readln());
+	greenStart = Number(prefsFile.readln());
+	blueStart = Number(prefsFile.readln());
+
+	redEnd = Number(prefsFile.readln());
+	greenEnd = Number(prefsFile.readln());
+	blueEnd = Number(prefsFile.readln());
+
+	steps = Number(prefsFile.readln());
+	tableHeight = Number(prefsFile.readln());
+
+	prefsFile.close();
+}
+
+// Add color to the document  ------------------------------------------------------
+function addColor(R, G, B) {
+	var newColor = theDoc.colors.add();
+	var cName = String(R + "/" + G + "/" + B);
+
+
+	try {
+		with(newColor) {
+			space = ColorSpace.rgb;
+			colorValue = [R, G, B];
+			name = cName;
+		}
+	} catch (e) { // Color was already in document, delete the new one.
+		newColor.remove();
+	}
+
+
+	return cName;
+
+}
+
+// Remove duplicates  ------------------------------------------------------
+function eliminateDuplicates(arr) {
+	var i,
+		len = arr.length,
+		out = [],
+		obj = {};
+
+	for (i = 0; i < len; i++) {
+		obj[arr[i]] = 0;
+	}
+	for (i in obj) {
+		out.push(i);
+	}
+	return out;
+}
+
+// Calculate brightness  ------------------------------------------------------
+function calcBrightness(color) {
+	var c = String(color);
+	var splitString = c.split("/");
+
+	var r = Number(splitString[0]);
+	var g = Number(splitString[1]);
+	var b = Number(splitString[2]);
+
+	return Math.sqrt(
+		r * r * .299 +
+		g * g * .587 +
+		b * b * .114);
+}
