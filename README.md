@@ -1,9 +1,7 @@
-# Indesign-Scripts
-
-Gradient Swatches
+#Gradient Swatches
 This script calculates intervals between two RGB colors, creates swatches for those colors, and builds a table gradient.  A few things of note:
 
-In the dialog:
+##In the dialog:
 - The user chooses a gradient name.
 - The user may choose how many steps they wish to calculate between the colors.
 - Both text boxes and sliders are available the color’s RGB and HSL. The HSL calculations are made as the RGB is manipulated (sliders and text input updated), and vice versa with HSL changes.
@@ -14,7 +12,7 @@ In the dialog:
 
 ![Gradient Table Dialog Screenshot](https://cloud.githubusercontent.com/assets/13002217/12951646/521e51b4-cfe1-11e5-97ca-66362fb58df1.png)
 
-Features of the table:
+##Features of the table:
 - A swatch for each calculated color is created and given the name of its RGB calculation (R/G/B).
 Duplicate swatches are automatically detected and deleted.
 - If a swatch already exists in the swatches panel, the script will apply that swatch and will not create a duplicate.
