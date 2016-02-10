@@ -12,6 +12,8 @@ In the dialog:
 - The user chooses the height of the table.
 - The user may choose to enter in a particular table width OR allow the script to calculate the page width (allowing for the page margins) and create a table that fills that width.
 
+![Gradient Table Dialog Screenshot](https://cloud.githubusercontent.com/assets/13002217/12951646/521e51b4-cfe1-11e5-97ca-66362fb58df1.png)
+
 Features of the table:
 - A swatch for each calculated color is created and given the name of its RGB calculation (R/G/B).
 Duplicate swatches are automatically detected and deleted.
@@ -25,4 +27,6 @@ Yes, there are lots of little steps, so the script features an UNDO function as 
 
 Hope this is useful, and let me know if you have any suggestions or edits.
 
+![Gradient Table ScreenShot1](https://cloud.githubusercontent.com/assets/13002217/12951630/36fea636-cfe1-11e5-9eb9-6f20ec95d2d3.png)
 
+![Gradient Table ScreenShot1](https://cloud.githubusercontent.com/assets/13002217/12951649/5a253404-cfe1-11e5-874f-ac4bc7e0c7e7.png)
