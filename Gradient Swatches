@@ -1,3 +1,8 @@
+// DESCRIPTION: Create a swatch gradient table
+// Copyright 2016, Tucker Harris
+// Written by Tucker Harris
+// github.com/tuckabelle
+
 // Show dialog
 if (app.version == 3) {
 	app.userInteractionLevel = UserInteractionLevels.interactWithAll;
@@ -5,15 +10,25 @@ if (app.version == 3) {
 	app.scriptPreferences.userInteractionLevel = UserInteractionLevels.interactWithAll;
 }
 
-// Default Preferences
+// DEFAULT PREFERENCES //
 var redStart = 0;
 var greenStart = 0;
 var blueStart = 0;
 var redEnd = 200;
 var greenEnd = 200;
 var blueEnd = 200;
+
+var HstartSave = 0;
+var SstartSave = 0;
+var LstartSave = 0;
+var HendSave = 200;
+var SendSave = 200;
+var LendSave = 200;
+
 var steps = 4;
-var tableHeight = 0;
+var tableHeight = 3;
+var tableWidth = 3;
+var checkWidth = "true";
 var colorName = "";
 
 // Needed variables to start
@@ -27,41 +42,526 @@ var pgMarginRight = theDoc.marginPreferences.right;
 var pgMarginBottom = theDoc.marginPreferences.bottom;
 
 // Check if preferences file exists and load it, if not save one
-var prefsFile = File((Folder(app.activeScript)).parent + "/GradientMakerPrefs.txt");
+var prefsFile = File((Folder(app.activeScript)).parent + "/GradientMakerPreferences.txt");
 if (!prefsFile.exists)
 	savePrefs();
 else
 	readPrefs();
 
-do {
-	var theDialog = createDialog();
-	if (!(theDialog.show()))
-		exit();
 
-	var startT = new Date();
 
-	// Read the dialog info
-	var NEWredStart = Number(NEWredStart.editContents);
-	var NEWgreenStart = Number(NEWgreenStart.editContents);
-	var NEWblueStart = Number(NEWblueStart.editContents);
-	var NEWredEnd = Number(NEWredEnd.editContents);
-	var NEWgreenEnd = Number(NEWgreenEnd.editContents);
-	var NEWblueEnd = Number(NEWblueEnd.editContents);
-	var NEWsteps = Number(NEWsteps.editContents);
-	var NEWtableHeight = Number(NEWtableHeight.editContents);
-	var NEWcolorName = String(NEWcolorName.editContents);
+// DIALOG CONTENT//
 
-	// Check for erroneous input
-	if (isNaN(NEWredStart) || isNaN(NEWgreenStart) || isNaN(NEWblueStart) ||
-		isNaN(NEWredEnd) || isNaN(NEWgreenEnd) || isNaN(NEWblueEnd) ||
-		isNaN(NEWsteps) || isNaN(NEWtableHeight)) {
-		alert("Non-numeric entered. Please try again.");
-		theDialog.destroy();
-	} else
-		break;
-} while (true);
 
-theDialog.destroy();
+
+var StartColorRed = redStart / 255;
+var StartColorGreen = greenStart / 255;
+var StartColorBlue = blueStart / 255;
+var StartColorHSL = rgbToHsl(StartColorRed * 255, StartColorGreen * 255, StartColorBlue * 255);
+StartColorH = Math.round(StartColorHSL[0]);
+StartColorS = Math.round(StartColorHSL[1]);
+StartColorL = Math.round(StartColorHSL[2]);
+
+var EndColorRed = redEnd / 255;
+var EndColorGreen = greenEnd / 255;
+var EndColorBlue = blueEnd / 255;
+var EndColorHSL = rgbToHsl(EndColorRed * 255, EndColorGreen * 255, EndColorBlue * 255);
+EndColorH = Math.round(EndColorHSL[0]);
+EndColorS = Math.round(EndColorHSL[1]);
+EndColorL = Math.round(EndColorHSL[2]);
+
+
+var w = new Window("dialog");
+w.orientation = "column";
+
+// Name the color
+var gStartInfo = w.add('group {orientation: "row"}');
+gStartInfo.alignment = "left";
+var gColorName = gStartInfo.add('group {orientation: "row"}');
+gColorName.add("statictext", undefined, "Name:");
+gColorName.alignment = "left";
+var NEWcolorName = gColorName.add("edittext", undefined, colorName);
+NEWcolorName.active = true;
+NEWcolorName.characters = 30;
+
+
+
+var gNumSteps = gStartInfo.add('group {orientation: "row"}');
+gNumSteps.add("statictext", undefined, "#Steps: ");
+gNumSteps.alignment = "right";
+gNumSteps.alignment = "right";
+gNumSteps.margins = [0, 0, 20, 0];
+var NEWsteps = gNumSteps.add("edittext", undefined, " " + steps);
+NEWsteps.active = true;
+NEWsteps.characters = 4;
+// Start Color Layout
+var gColorCalc = w.add('group {orientation: "column"}');
+var pColorCalcStart = gColorCalc.add('panel', undefined, 'Start Color', {
+	borderStyle: 'etched'
+});
+var gColorStart = pColorCalcStart.add('group {orientation: "row"}');
+var gColorNumStart = gColorStart.add('group {orientation: "column"}');
+gColorNumStart.margins = [0, 10, 0, 10];
+
+
+
+// Start Layout - RGB
+var gColorNumRedStart = gColorNumStart.add('group {orientation: "row"}');
+gColorNumRedStart.add("statictext", undefined, "R");
+gColorNumRedStart.alignment = "left";
+var NEWredStart = gColorNumRedStart.add("edittext", undefined, redStart);
+NEWredStart.characters = 3;
+var sliderRed = gColorNumRedStart.add('slider {minvalue: 0, maxvalue: 255}');
+sliderRed.value = redStart;
+
+var gColorNumGreenStart = gColorNumStart.add('group {orientation: "row"}');
+gColorNumGreenStart.add("statictext", undefined, "G");
+gColorNumGreenStart.alignment = "left";
+var NEWgreenStart = gColorNumGreenStart.add("edittext", undefined, greenStart);
+NEWgreenStart.characters = 3;
+var sliderGreen = gColorNumGreenStart.add('slider {minvalue: 0, maxvalue: 255}');
+sliderGreen.value = greenStart;
+
+
+var gColorNumBlueStart = gColorNumStart.add('group {orientation: "row"}');
+gColorNumBlueStart.add("statictext", undefined, "B");
+gColorNumBlueStart.alignment = "left";
+var NEWblueStart = gColorNumBlueStart.add("edittext", undefined, blueStart);
+NEWblueStart.characters = 3;
+var sliderBlue = gColorNumBlueStart.add('slider {minvalue: 0, maxvalue: 255}');
+sliderBlue.value = blueStart;
+
+// Start Layout - HSL
+var startHSL = rgbToHsl(redStart, greenStart, blueStart);
+var gColorHSLStart = gColorStart.add('group {orientation: "column"}');
+gColorHSLStart.margins = [20, 10, 0, 10];
+var gColorHStart = gColorHSLStart.add('group {orientation: "row"}');
+gColorHStart.add("statictext", undefined, "H");
+gColorHStart.alignment = "left";
+var HStart = gColorHStart.add("edittext", undefined, StartColorH);
+HStart.characters = 3;
+var sliderH = gColorHStart.add('slider {minvalue: 0, maxvalue: 360, value: }');
+sliderH.value = startHSL[0];
+
+
+var gColorSStart = gColorHSLStart.add('group {orientation: "row"}');
+gColorSStart.add("statictext", undefined, "S");
+gColorSStart.alignment = "left";
+var SStart = gColorSStart.add("edittext", undefined, StartColorS);
+SStart.characters = 3;
+var sliderS = gColorSStart.add('slider {minvalue: 0, maxvalue: 100, value: }');
+sliderS.value = startHSL[1];
+
+
+var gColorLStart = gColorHSLStart.add('group {orientation: "row"}');
+gColorLStart.add("statictext", undefined, "L");
+gColorLStart.alignment = "left";
+var LStart = gColorLStart.add("edittext", undefined, StartColorL);
+LStart.characters = 3;
+var sliderL = gColorLStart.add('slider {minvalue: 0, maxvalue: 100, value: }');
+sliderL.value = startHSL[2];
+
+// Start Layout - Swatch
+var gColorSwatchStart = gColorStart.add('group {orientation: "column"}');
+gColorSwatchStart.margins = [30, 0, 0, 0];
+var e = gColorSwatchStart.add("edittext", undefined, "  ");
+var swatchRed2 = NEWredStart.text / 255;
+var swatchGreen2 = NEWgreenStart.text / 255;
+var swatchBlue2 = NEWblueStart.text / 255;
+e.graphics.foregroundColor = e.graphics.newPen(e.graphics.PenType.SOLID_COLOR, [StartColorRed, StartColorGreen, StartColorBlue], 1);
+e.graphics.backgroundColor = e.graphics.newBrush(e.graphics.BrushType.SOLID_COLOR, [StartColorRed, StartColorGreen, StartColorBlue], 1);
+//e.alignment = ["fill", "fill"];
+e.minimumSize = [85, 85];
+e.graphics.font = ScriptUI.newFont("Letter Gothic Std", "Bold", 2);
+
+
+// End Color Layout
+var pColorCalcEnd = gColorCalc.add('panel', undefined, 'End Color', {
+	borderStyle: 'etched'
+});
+var gColorEnd = pColorCalcEnd.add('group {orientation: "row"}');
+
+// End Layout - RGB
+var gColorNumEnd = gColorEnd.add('group {orientation: "column"}');
+gColorNumEnd.margins = [0, 10, 0, 10];
+var gColorNumRedEnd = gColorNumEnd.add('group {orientation: "row"}');
+gColorNumRedEnd.add("statictext", undefined, "R");
+gColorNumRedEnd.alignment = "left";
+var NEWredEnd = gColorNumRedEnd.add("edittext", undefined, redEnd);
+NEWredEnd.characters = 3;
+var sliderRed2 = gColorNumRedEnd.add('slider {minvalue: 0, maxvalue: 255, value: redEnd}');
+sliderRed2.value = redEnd;
+
+var gColorNumGreenEnd = gColorNumEnd.add('group {orientation: "row"}');
+gColorNumGreenEnd.add("statictext", undefined, "G");
+gColorNumGreenEnd.alignment = "left";
+var NEWgreenEnd = gColorNumGreenEnd.add("edittext", undefined, greenEnd);
+NEWgreenEnd.characters = 3;
+var sliderGreen2 = gColorNumGreenEnd.add('slider {minvalue: 0, maxvalue: 255, value: greenEnd}');
+sliderGreen2.value = greenEnd;
+
+var gColorNumBlueEnd = gColorNumEnd.add('group {orientation: "row"}');
+gColorNumBlueEnd.add("statictext", undefined, "B");
+gColorNumBlueEnd.alignment = "left";
+var NEWblueEnd = gColorNumBlueEnd.add("edittext", undefined, blueEnd);
+NEWblueEnd.characters = 3;
+var sliderBlue2 = gColorNumBlueEnd.add('slider {minvalue: 0, maxvalue: 255, value: blueEnd}');
+sliderBlue2.value = blueEnd;
+
+// End Layout - HSL
+var endHSL = rgbToHsl(redEnd, greenEnd, blueEnd);
+var gColorHSLEnd = gColorEnd.add('group {orientation: "column"}');
+gColorHSLEnd.margins = [20, 10, 0, 10];
+var gColorHEnd = gColorHSLEnd.add('group {orientation: "row"}');
+gColorHEnd.add("statictext", undefined, "H");
+gColorHEnd.alignment = "left";
+var HEnd = gColorHEnd.add("edittext", undefined, EndColorH);
+HEnd.characters = 3;
+var sliderH2 = gColorHEnd.add('slider {minvalue: 0, maxvalue: 360, value: }');
+sliderH2.value = endHSL[0];
+
+var gColorSEnd = gColorHSLEnd.add('group {orientation: "row"}');
+gColorSEnd.add("statictext", undefined, "S");
+gColorSEnd.alignment = "left";
+var SEnd = gColorSEnd.add("edittext", undefined, EndColorS);
+SEnd.characters = 3;
+var sliderS2 = gColorSEnd.add('slider {minvalue: 0, maxvalue: 100, value: }');
+sliderS2.value = endHSL[1];
+
+var gColorLEnd = gColorHSLEnd.add('group {orientation: "row"}');
+gColorLEnd.add("statictext", undefined, "L");
+gColorLEnd.alignment = "left";
+var LEnd = gColorLEnd.add("edittext", undefined, EndColorL);
+LEnd.characters = 3;
+var sliderL2 = gColorLEnd.add('slider {minvalue: 0, maxvalue: 100, value: }');
+sliderL2.value = endHSL[2];
+
+// End Layout - Swatch
+var gColorSwatchEnd = gColorEnd.add('group {orientation: "column"}');
+gColorSwatchEnd.margins = [30, 0, 0, 0];
+var f = gColorSwatchEnd.add("edittext", undefined, "  ");
+f.alignment = ["fill", "fill"];
+f.minimumSize = [85, 85];
+var swatchRed2 = NEWredEnd.text / 255;
+var swatchGreen2 = NEWgreenEnd.text / 255;
+var swatchBlue2 = NEWblueEnd.text / 255;
+f.graphics.foregroundColor = f.graphics.newPen(f.graphics.PenType.SOLID_COLOR, [EndColorRed, EndColorGreen, EndColorBlue], 1);
+f.graphics.backgroundColor = f.graphics.newBrush(f.graphics.BrushType.SOLID_COLOR, [EndColorRed, EndColorGreen, EndColorBlue], 1);
+f.graphics.font = ScriptUI.newFont("Letter Gothic Std", "Bold", 2);
+
+
+// Start Color Events
+// Start Events - RGB
+sliderRed.onChanging = function () {
+	NEWredStart.text = Math.round(sliderRed.value);
+	StartColorRed = NEWredStart.text / 255;
+	calculateAll(StartColorRed, StartColorGreen, StartColorBlue, "rgb");
+	updateStatus(e, StartColorRed, StartColorGreen, StartColorBlue);
+}
+
+NEWredStart.onChanging = function () {
+	sliderRed.value = Number(NEWredStart.text);
+	StartColorRed = NEWredStart.text / 255;
+	calculateAll(StartColorRed, StartColorGreen, StartColorBlue, "rgb");
+	updateStatus(e, StartColorRed, StartColorGreen, StartColorBlue);
+}
+
+NEWredStart.onChange = function () {
+	checkFormat(NEWredStart, "rgb");
+}
+
+sliderGreen.onChanging = function () {
+	NEWgreenStart.text = Math.round(sliderGreen.value);
+	StartColorGreen = NEWgreenStart.text / 255;
+	calculateAll(StartColorRed, StartColorGreen, StartColorBlue, "rgb");
+	updateStatus(e, StartColorRed, StartColorGreen, StartColorBlue);
+}
+
+NEWgreenStart.onChanging = function () {
+	sliderGreen.value = Number(NEWgreenStart.text);
+	StartColorGreen = NEWgreenStart.text / 255;
+	calculateAll(StartColorRed, StartColorGreen, StartColorBlue, "rgb");
+	updateStatus(e, StartColorRed, StartColorGreen, StartColorBlue);
+}
+
+NEWgreenStart.onChange = function () {
+	checkFormat(NEWgreenStart, "rgb");
+}
+
+sliderBlue.onChanging = function () {
+	NEWblueStart.text = Math.round(sliderBlue.value);
+	StartColorBlue = NEWblueStart.text / 255;
+	calculateAll(StartColorRed, StartColorGreen, StartColorBlue, "rgb");
+	updateStatus(e, StartColorRed, StartColorGreen, StartColorBlue);
+}
+
+NEWblueStart.onChanging = function () {
+	sliderBlue.value = Number(NEWblueStart.text);
+	StartColorBlue = NEWblueStart.text / 255;
+	calculateAll(StartColorRed, StartColorGreen, StartColorBlue, "rgb");
+	updateStatus(e, StartColorRed, StartColorGreen, StartColorBlue);
+}
+
+NEWblueStart.onChange = function () {
+	checkFormat(NEWblueStart, "rgb");
+}
+
+
+// Start Events - HSL
+sliderH.onChanging = function () {
+	HStart.text = Math.round(sliderH.value);
+	StartColorH = HStart.text;
+	calculateAll(StartColorH, StartColorS, StartColorL, "hsl");
+	updateStatus(e, StartColorRed, StartColorGreen, StartColorBlue);
+}
+
+HStart.onChanging = function () {
+	sliderH.value = Number(HStart.text);
+	StartColorH = HStart.text;
+	calculateAll(StartColorH, StartColorS, StartColorL, "hsl");
+	updateStatus(e, StartColorRed, StartColorGreen, StartColorBlue);
+}
+
+HStart.onChange = function () {
+	checkFormat(HStart, "h");
+}
+
+sliderS.onChanging = function () {
+	SStart.text = Math.round(sliderS.value);
+	StartColorS = SStart.text;
+	calculateAll(StartColorH, StartColorS, StartColorL, "hsl");
+	updateStatus(e, StartColorRed, StartColorGreen, StartColorBlue);
+}
+
+SStart.onChanging = function () {
+	sliderS.value = Number(SStart.text);
+	StartColorS = SStart.text;
+	calculateAll(StartColorH, StartColorS, StartColorL, "hsl");
+	updateStatus(e, StartColorRed, StartColorGreen, StartColorBlue);
+}
+
+SStart.onChange = function () {
+	checkFormat(SStart, "sl");
+}
+
+sliderL.onChanging = function () {
+	LStart.text = Math.round(sliderL.value);
+	StartColorL = LStart.text;
+	calculateAll(StartColorH, StartColorS, StartColorL, "hsl");
+	updateStatus(e, StartColorRed, StartColorGreen, StartColorBlue);
+}
+
+LStart.onChanging = function () {
+	sliderL.value = Number(LStart.text);
+	StartColorL = LStart.text;
+	calculateAll(StartColorH, StartColorS, StartColorL, "hsl");
+	updateStatus(e, StartColorRed, StartColorGreen, StartColorBlue);
+}
+
+LStart.onChange = function () {
+	checkFormat(LStart, "sl");
+}
+
+
+// End Color Events
+// End Events - RGB
+sliderRed2.onChanging = function () {
+	NEWredEnd.text = Math.round(sliderRed2.value);
+	EndColorRed = NEWredEnd.text / 255;
+	calculateAll(EndColorRed, EndColorGreen, EndColorBlue, "rgb2");
+	updateStatus(f, EndColorRed, EndColorGreen, EndColorBlue);
+}
+
+NEWredEnd.onChanging = function () {
+	sliderRed2.value = Number(NEWredEnd.text);
+	EndColorRed = NEWredEnd.text / 255;
+	calculateAll(EndColorRed, EndColorGreen, EndColorBlue, "rgb2");
+	updateStatus(f, EndColorRed, EndColorGreen, EndColorBlue);
+}
+
+NEWredEnd.onChange = function () {
+	checkFormat(NEWredEnd, "rgb");
+}
+
+sliderGreen2.onChanging = function () {
+	NEWgreenEnd.text = Math.round(sliderGreen2.value);
+	EndColorGreen = NEWgreenEnd.text / 255;
+	calculateAll(EndColorRed, EndColorGreen, EndColorBlue, "rgb2");
+	updateStatus(f, EndColorRed, EndColorGreen, EndColorBlue);
+}
+
+NEWgreenEnd.onChanging = function () {
+	sliderGreen2.value = Number(NEWgreenEnd.text);
+	EndColorGreen = NEWgreenEnd.text / 255;
+	calculateAll(EndColorRed, EndColorGreen, EndColorBlue, "rgb2");
+	updateStatus(f, EndColorRed, EndColorGreen, EndColorBlue);
+}
+
+NEWgreenEnd.onChange = function () {
+	checkFormat(NEWgreenEnd, "rgb");
+}
+
+sliderBlue2.onChanging = function () {
+	NEWblueEnd.text = Math.round(sliderBlue2.value);
+	EndColorBlue = NEWblueEnd.text / 255;
+	calculateAll(EndColorRed, EndColorGreen, EndColorBlue, "rgb2");
+	updateStatus(f, EndColorRed, EndColorGreen, EndColorBlue);
+}
+
+NEWblueEnd.onChanging = function () {
+	sliderBlue2.value = Number(NEWblueEnd.text);
+	EndColorBlue = NEWblueEnd.text / 255;
+	calculateAll(EndColorRed, EndColorGreen, EndColorBlue, "rgb2");
+	updateStatus(f, EndColorRed, EndColorGreen, EndColorBlue);
+}
+
+NEWblueEnd.onChange = function () {
+	checkFormat(NEWblueEnd, "rgb");
+}
+
+
+// End Events - HSL
+sliderH2.onChanging = function () {
+	HEnd.text = Math.round(sliderH2.value);
+	EndColorH = sliderH2.value;
+	calculateAll(EndColorH, EndColorS, EndColorL, "hsl2");
+	updateStatus(f, EndColorRed, EndColorGreen, EndColorBlue);
+}
+
+HEnd.onChanging = function () {
+	sliderH2.value = Number(HEnd.text);
+	EndColorH = HEnd.text;
+	calculateAll(EndColorH, EndColorS, EndColorL, "hsl2");
+	updateStatus(f, EndColorRed, EndColorGreen, EndColorBlue);
+}
+
+HEnd.onChange = function () {
+	checkFormat(HEnd, "h");
+}
+
+sliderS2.onChanging = function () {
+	SEnd.text = Math.round(sliderS2.value);
+	EndColorS = sliderS2.value;
+	calculateAll(EndColorH, EndColorS, EndColorL, "hsl2");
+	updateStatus(f, EndColorRed, EndColorGreen, EndColorBlue);
+}
+
+SEnd.onChanging = function () {
+	sliderS2.value = Number(SEnd.text);
+	EndColorS = SEnd.text;
+	calculateAll(EndColorH, EndColorS, EndColorL, "hsl2");
+	updateStatus(f, EndColorRed, EndColorGreen, EndColorBlue);
+}
+
+SEnd.onChange = function () {
+	checkFormat(SEnd, "sl");
+}
+
+sliderL2.onChanging = function () {
+	LEnd.text = Math.round(sliderL2.value);
+	EndColorL = sliderL2.value;
+	calculateAll(EndColorH, EndColorS, EndColorL, "hsl2");
+	updateStatus(f, EndColorRed, EndColorGreen, EndColorBlue);
+}
+
+LEnd.onChanging = function () {
+	sliderL.value = Number(LEnd.text);
+	EndColorL = LEnd.text;
+	calculateAll(EndColorH, EndColorS, EndColorL, "hsl2");
+	updateStatus(f, EndColorRed, EndColorGreen, EndColorBlue);
+}
+
+LEnd.onChange = function () {
+	checkFormat(LEnd, "sl");
+}
+
+
+// Final Dialog Options
+var gEndInfo = w.add('group {orientation: "row", preferredSize: [550, 100]}');
+gEndInfo.margins = [0, 0, 0, 0];
+var gTableHeight = gEndInfo.add('group {orientation: "row", preferredSize: [150, 100]}');
+gTableHeight.alignChildren = ["left", "top"];
+gTableHeight.margins = [0, 0, 0, 0];
+gTableHeight.add("statictext", undefined, "Height: ");
+gTableHeight.alignment = "left";
+
+var NEWtableHeight = gTableHeight.add("edittext", undefined, " " + tableHeight);
+NEWtableHeight.active = true;
+NEWtableHeight.characters = 4;
+
+var gTableWidthlabel = gEndInfo.add('group {orientation: "row", preferredSize: [00, 100]}');
+gTableWidthlabel.alignChildren = ["right", "top"];
+gTableWidthlabel.margins = [0, 0, 0, 0];
+gTableWidthlabel.add("statictext", undefined, "Table Width:");
+gTableWidthlabel.alignment = "left";
+
+var gTableWidthChoices = gEndInfo.add('group {orientation: "column", preferredSize: [150, 100]}');
+gTableWidthChoices.alignment = "left";
+gTableWidthChoices.alignChildren = ["left", "top"];
+gTableWidthChoices.margins = [0, 0, 0, 0];
+var NEWcheckWidth = gTableWidthChoices.add("checkbox", undefined, "Page Width");
+NEWcheckWidth.alignment = "left";
+var widthCustom = gTableWidthChoices.add("checkbox", undefined, "Custom: ");
+var NEWtableWidth = gTableWidthChoices.add("edittext", undefined, " " + tableWidth);
+NEWcheckWidth.alignment = "left";
+NEWtableWidth.active = true;
+NEWtableWidth.characters = 4;
+if (checkWidth == "true") {
+	NEWcheckWidth.value = true;
+	widthCustom.value = false;
+} else {
+	NEWcheckWidth.value = false;
+	widthCustom.value = true;
+}
+
+NEWcheckWidth.onClick = function () {
+	if (NEWcheckWidth.value == true) {
+		widthCustom.value = false;
+	}
+	if (NEWcheckWidth.value == false) {
+		widthCustom.value = true;
+	}
+}
+
+widthCustom.onClick = function () {
+	if (widthCustom.value == true) {
+		NEWcheckWidth.value = false;
+	}
+	if (widthCustom.value == false) {
+		NEWcheckWidth.value = true;
+	}
+}
+
+var buttons = gEndInfo.add('group {orientation: "column", preferredSize: [140, 100]}}');
+buttons.alignChildren = ["right", "top"];
+buttons.margins = [0, 0, 0, 0];
+buttons.add("button", undefined, "OK");
+buttons.add("button", undefined, "Cancel");
+
+
+if (!(w.show() == 1)) {
+	exit();
+}
+
+
+
+// READ DIALOG INPUT //
+
+
+var startT = new Date();
+
+// Read the dialog info
+var NEWredStart = Number(NEWredStart.text);
+var NEWgreenStart = Number(NEWgreenStart.text);
+var NEWblueStart = Number(NEWblueStart.text);
+var NEWredEnd = Number(NEWredEnd.text);
+var NEWgreenEnd = Number(NEWgreenEnd.text);
+var NEWblueEnd = Number(NEWblueEnd.text);
+var NEWsteps = Number(NEWsteps.text);
+var NEWtableHeight = Number(NEWtableHeight.text);
+var NEWcheckWidth = String(NEWcheckWidth.value);
+var NEWtableWidth = Number(NEWtableWidth.text);
+var NEWcolorName = String(NEWcolorName.text);
 
 // Use the entered data if it checks out
 redStart = NEWredStart;
@@ -73,6 +573,8 @@ greenEnd = NEWgreenEnd;
 blueEnd = NEWblueEnd;
 
 steps = NEWsteps;
+checkWidth = NEWcheckWidth;
+tableWidth = NEWtableWidth;
 tableHeight = NEWtableHeight;
 colorName = NEWcolorName;
 savePrefs();
@@ -88,220 +590,180 @@ var page = 0;
 theDoc.viewPreferences.rulerOrigin = RulerOrigin.pageOrigin;
 theDoc.zeroPoint = [0, 0];
 
-// Create a color array
-var colorArray = [];
-var NEWcolorArray = [];
-colorArray.push(addColor(NEWredStart, NEWgreenStart, NEWblueStart));
 
-// Caluculate each shade and add to color array
-for (i = 0; i <= NEWsteps; i++) {
-	var Red = Math.round(interpolate(NEWredStart, NEWredEnd, i, NEWsteps));
-	var Green = Math.round(interpolate(NEWgreenStart, NEWgreenEnd, i, NEWsteps));
-	var Blue = Math.round(interpolate(NEWblueStart, NEWblueEnd, i, NEWsteps));
 
-	// return the interpolated value between pBegin and pEnd
-	function interpolate(pBegin, pEnd, pStep, pMax) {
+// CREATE GRADIENT TABLE //
+
+
+
+if (6 > parseFloat(app.version)) {
+	doReplace();
+} else {
+	app.doScript(doReplace, ScriptLanguage.JAVASCRIPT, undefined, UndoModes.ENTIRE_SCRIPT, "Swatch Table");
+}
+
+function doReplace() {
+	// Create a color array
+	var colorArray = [];
+	var NEWcolorArray = [];
+	colorArray.push(addColor(NEWredStart, NEWgreenStart, NEWblueStart));
+
+	// Caluculate each shade and add to color array
+	var difRed = findDifference(NEWredStart, NEWredEnd);
+	var difGreen = findDifference(NEWgreenStart, NEWgreenEnd);
+	var difBlue = findDifference(NEWblueStart, NEWblueEnd);
+
+	function findDifference(pBegin, pEnd) {
 		if (pBegin < pEnd) {
-			return ((pEnd - pBegin) * (pStep / pMax)) + pBegin;
+			return (pEnd - pBegin);
 		} else {
-			return ((pBegin - pEnd) * (1 - (pStep / pMax))) + pEnd;
-		}
+			return (pBegin - pEnd);
+		};
 	}
-	colorArray.push(addColor(Red, Green, Blue));
-}
 
-// Eliminate duplicates from the color array
-NEWcolorArray = eliminateDuplicates(colorArray);
+	var StartArray = [difRed, difGreen, difBlue];
 
-// Add first color to the color array
-addColor(NEWredEnd, NEWgreenEnd, NEWblueEnd);
+	for (i = 0; i <= NEWsteps; i++) {
+		var Red = Math.round(interpolate(NEWredStart, NEWredEnd, i, NEWsteps));
+		var Green = Math.round(interpolate(NEWgreenStart, NEWgreenEnd, i, NEWsteps));
+		var Blue = Math.round(interpolate(NEWblueStart, NEWblueEnd, i, NEWsteps));
 
-// Create textFrame
-var y1 = app.activeDocument.marginPreferences.top;
-var x1 = app.activeDocument.marginPreferences.left;
-var y2 = app.activeDocument.documentPreferences.pageHeight - app.activeDocument.marginPreferences.bottom;
-var x2 = app.activeDocument.documentPreferences.pageWidth - app.activeDocument.marginPreferences.right;
-var textFrame = app.activeDocument.textFrames.add({
-	geometricBounds: [y1, x1, y2, x2]
-});
-
-// Add table to text frame
-var columnCount = Number(NEWcolorArray.length + 1);
-var gradientTable = textFrame.insertionPoints[0].tables.add(undefined, undefined, {
-	bodyRowCount: 1,
-	columnCount: columnCount
-});
-gradientTable.rows.everyItem().properties = {
-	autoGrow: false,
-	height: NEWtableHeight
-};
-gradientTable.columns.everyItem().verticalJustification = VerticalJustification.CENTER_ALIGN;
-gradientTable.columns[0].cells[0].contents = String(NEWcolorName);
-gradientTable.columns[0].cells[0].properties = {
-	autoGrow: false,
-	width: .5
-};
-gradientTable.bottomBorderStrokeColor = "Black";
-gradientTable.topBorderStrokeColor = "Black";
-gradientTable.leftBorderStrokeColor = "Black";
-gradientTable.rightBorderStrokeColor = "Black";
-gradientTable.bottomBorderStrokeWeight = 0.25;
-gradientTable.topBorderStrokeWeight = 0.25;
-gradientTable.leftBorderStrokeWeight = 0.25;
-gradientTable.rightBorderStrokeWeight = 0.25;
-
-// Settings for the first column
-gradientTable.columns[0].cells[0].rotationAngle = 270;
-gradientTable.columns[0].cells[0].fillColor = "Paper";
-var myTitleString = gradientTable.columns[0].cells.item(0).characters.everyItem();
-myTitleString.pointSize = 16;
-myTitleString.appliedFont = "Calibri";
-myTitleString.justification = Justification.centerAlign;
-
-// Cell Settings
-for (i = 0; i <= NEWcolorArray.length; i++) {
-	var newColor = app.activeDocument.swatches.item(String(NEWcolorArray[i]));
-	if (NEWcolorArray[i] != undefined) {
-		gradientTable.columns[i + 1].contents = NEWcolorArray[i];
-		gradientTable.columns[i + 1].fillColor = newColor;
-
-		var brightness = calcBrightness(NEWcolorArray[i]);
-		if (brightness <= 130) {
-			gradientTable.columns[i + 1].cells[0].rightEdgeStrokeColor = theDoc.colors.item("Paper");
-			gradientTable.columns[i + 1].cells[0].rightEdgeStrokeWeight = 0.25;
-		} else {
-			gradientTable.columns[i + 1].cells[0].rightEdgeStrokeColor = theDoc.colors.item("Black");
-			gradientTable.columns[i + 1].cells[0].rightEdgeStrokeWeight = 0.25;
+		// return the interpolated value between pBegin and pEnd
+		function interpolate(pBegin, pEnd, pStep, pMax) {
+			if (pBegin < pEnd) {
+				return ((pEnd - pBegin) * (pStep / pMax)) + pBegin;
+			} else {
+				return ((pBegin - pEnd) * (1 - (pStep / pMax))) + pEnd;
+			}
 		}
-
-		// Text Settings 
-		var myString = gradientTable.columns[i + 1].cells.item(0).characters.everyItem();
-		myString.pointSize = 16;
-		myString.appliedFont = "Calibri";
-		myString.justification = Justification.centerAlign;
-		var brightness = calcBrightness(NEWcolorArray[i]);
-		if (brightness <= 130) {
-			myString.fillColor = theDoc.colors.item("Paper");
-		} else {
-			myString.fillColor = theDoc.colors.item("Black");
-		}
-
+		colorArray.push(addColor(Red, Green, Blue));
 	}
-}
 
-// Fit Frame to Table
-textFrame.fit(FitOptions.FRAME_TO_CONTENT);
+	// Eliminate duplicates from the color array
+	NEWcolorArray = eliminateDuplicates(colorArray);
 
-// Exit
-var endT = new Date();
-exit();
+	// Add first color to the color array
+	addColor(NEWredEnd, NEWgreenEnd, NEWblueEnd);
 
-// Create the dialog ------------------------------------------------------
-function createDialog() {
-	var tempDialog = app.dialogs.add({
-		name: "Swatch Gradient",
-		canCancel: true
+	// Create textFrame
+	if (NEWcheckWidth == "true") {
+		var y1 = app.activeDocument.marginPreferences.top;
+		var x1 = app.activeDocument.marginPreferences.left;
+		var y2 = app.activeDocument.documentPreferences.pageHeight - app.activeDocument.marginPreferences.bottom;
+		var x2 = app.activeDocument.documentPreferences.pageWidth - app.activeDocument.marginPreferences.right;
+		var textFrame = app.activeDocument.textFrames.add({
+			geometricBounds: [y1, x1, y2, x2]
+		});
+	}
+	if (NEWcheckWidth == "false") {
+		var y1 = app.activeDocument.marginPreferences.top;
+		var x1 = app.activeDocument.marginPreferences.left;
+		var y2 = app.activeDocument.documentPreferences.pageHeight - app.activeDocument.marginPreferences.bottom;
+		var x2 = tableWidth;
+		var textFrame = app.activeDocument.textFrames.add({
+			geometricBounds: [y1, x1, y2, x2]
+		});
+	}
+
+	// Add table to text frame
+	var columnCount = Number(NEWcolorArray.length + 1);
+	var gradientTable = textFrame.insertionPoints[0].tables.add(undefined, undefined, {
+		bodyRowCount: 1,
+		columnCount: columnCount
 	});
-	with(tempDialog) {
-		with(dialogColumns.add()) {
-			with(dialogRows.add()) {
-				staticTexts.add({
-					staticLabel: "Name"
-				});
-				NEWcolorName = textEditboxes.add({
-					editContents: "" + colorName,
-					minWidth: 150
-				});
-			}
-			with(dialogRows.add())
+	gradientTable.rows.everyItem().properties = {
+		autoGrow: false,
+		height: NEWtableHeight
+	};
+	gradientTable.columns.everyItem().verticalJustification = VerticalJustification.CENTER_ALIGN;
+	gradientTable.columns[0].cells[0].contents = String(NEWcolorName) + "\n" + getDate();
 
-			staticTexts.add({
-				staticLabel: "Start Color"
-			});
-			with(borderPanels.add()) {
+	function getDate() {
+		var date = new Date();
+		var day = (date.getDate() > 10) ? date.getDate() : ("0" + date.getDate()),
+			month = ((date.getMonth() + 1) > 10) ? (date.getMonth() + 1) : ("0" + (date.getMonth() + 1)),
+			year = (date.getFullYear() > 10) ? date.getFullYear() : ("0" + date.getFullYear());
 
-				with(dialogColumns.add()) {
-					with(dialogRows.add()) {
-						staticTexts.add({
-							staticLabel: "R"
-						});
-						NEWredStart = textEditboxes.add({
-							editContents: "" + redStart,
-							minWidth: 30
-						});
-						staticTexts.add({
-							staticLabel: "G"
-						});
-						NEWgreenStart = textEditboxes.add({
-							editContents: "" + greenStart,
-							minWidth: 30
-						});
-						staticTexts.add({
-							staticLabel: "B"
-						});
-						NEWblueStart = textEditboxes.add({
-							editContents: "" + blueStart,
-							minWidth: 30
-						});
-					}
-				}
-			}
-			with(dialogRows.add())
-			staticTexts.add({
-				staticLabel: "End Color"
-			});
-			with(borderPanels.add()) {
-				with(dialogColumns.add()) {
-					with(dialogRows.add()) {
-						staticTexts.add({
-							staticLabel: "R"
-						});
-						NEWredEnd = textEditboxes.add({
-							editContents: "" + redEnd,
-							minWidth: 30
-						});
-						staticTexts.add({
-							staticLabel: "G"
-						});
-						NEWgreenEnd = textEditboxes.add({
-							editContents: "" + greenEnd,
-							minWidth: 30
-						});
-						staticTexts.add({
-							staticLabel: "B"
-						});
-						NEWblueEnd = textEditboxes.add({
-							editContents: "" + blueEnd,
-							minWidth: 30
-						});
-					}
-				}
+		return month + "/" + day + "/" + year;
+	};
+
+
+	gradientTable.columns[0].cells[0].properties = {
+		autoGrow: false,
+		width: 1
+	};
+	gradientTable.bottomBorderStrokeColor = "Black";
+	gradientTable.topBorderStrokeColor = "Black";
+	gradientTable.leftBorderStrokeColor = "Black";
+	gradientTable.rightBorderStrokeColor = "Black";
+	gradientTable.bottomBorderStrokeWeight = 0.25;
+	gradientTable.topBorderStrokeWeight = 0.25;
+	gradientTable.leftBorderStrokeWeight = 0.25;
+	gradientTable.rightBorderStrokeWeight = 0.25;
+
+	// Settings for the first column
+	gradientTable.columns[0].cells[0].rotationAngle = 270;
+	gradientTable.columns[0].cells[0].fillColor = "Paper";
+	var myTitleString = gradientTable.columns[0].cells.item(0).characters.everyItem();
+	myTitleString.pointSize = 16;
+	myTitleString.appliedFont = "Calibri";
+	myTitleString.justification = Justification.centerAlign;
+	myTitleString.horizontalScale = 99;
+	// Cell Settings
+	for (i = 0; i <= NEWcolorArray.length; i++) {
+		var newColor = app.activeDocument.swatches.item(String(NEWcolorArray[i]));
+		if (NEWcolorArray[i] != undefined) {
+			gradientTable.columns[i + 1].contents = NEWcolorArray[i];
+			gradientTable.columns[i + 1].fillColor = newColor;
+
+
+
+
+			var brightness = calcBrightness(NEWcolorArray[i]);
+			if (brightness <= 130) {
+				gradientTable.columns[i + 1].cells[0].rightEdgeStrokeColor = theDoc.colors.item("Paper");
+				gradientTable.columns[i + 1].cells[0].rightEdgeStrokeWeight = 0.25;
+			} else {
+				gradientTable.columns[i + 1].cells[0].rightEdgeStrokeColor = theDoc.colors.item("Black");
+				gradientTable.columns[i + 1].cells[0].rightEdgeStrokeWeight = 0.25;
 			}
 
-			with(dialogRows.add()) {
-				staticTexts.add({
-					staticLabel: "Number of Steps"
-				});
-				NEWsteps = textEditboxes.add({
-					editContents: "" + steps,
-					minWidth: 30
-				});
+			// Text Settings 
+			var myString = gradientTable.columns[i + 1].cells[0].characters.everyItem();
+			myString.pointSize = 16;
+			myString.appliedFont = "Calibri";
+			myString.justification = Justification.centerAlign;
+			myString.horizontalScale = 99;
+			var brightness = calcBrightness(NEWcolorArray[i]);
+			if (brightness <= 130) {
+				myString.fillColor = theDoc.colors.item("Paper");
+			} else {
+				myString.fillColor = theDoc.colors.item("Black");
 			}
-			with(dialogRows.add()) {
-				staticTexts.add({
-					staticLabel: "Table Height"
-				});
-				NEWtableHeight = textEditboxes.add({
-					editContents: "" + tableHeight,
-					minWidth: 30
-				});
-			}
+
+
+		}
+		var cellOverflow = gradientTable.columns.everyItem().cells.everyItem();
+		if (cellOverflow.overflows) {
+			cellOverflow.rotationAngle = 270;
 		}
 	}
-	return tempDialog;
+
+
+
+	// Fit Frame to Table
+	textFrame.fit(FitOptions.FRAME_TO_CONTENT);
+
+	// Exit
+	var endT = new Date();
+	exit();
+
+
 }
 
-// Save preferences to a text file  ------------------------------------------------------
+// FUNCTION: SAVE PREFERENCES TO FILE //
+
+
 function savePrefs() {
 	var newPrefs =
 
@@ -313,8 +775,21 @@ function savePrefs() {
 		greenEnd + "\n" +
 		blueEnd + "\n" +
 
+
+		HstartSave + "\n" +
+		SstartSave + "\n" +
+		LstartSave + "\n" +
+
+		HendSave + "\n" +
+		SendSave + "\n" +
+		LendSave + "\n" +
+
 		steps + "\n" +
+		colorName + "\n" +
+		checkWidth + "\n" +
+		tableWidth + "\n" +
 		tableHeight
+
 
 	prefsFile.open("w");
 	prefsFile.write(newPrefs);
@@ -322,7 +797,11 @@ function savePrefs() {
 	prefsFile.close();
 }
 
-// Read the preferences from a text file  ------------------------------------------------------
+
+
+// FUNCTION: READ PREFERENCES FROM TEXT FILE //
+
+
 function readPrefs() {
 	prefsFile.open("r");
 
@@ -334,40 +813,54 @@ function readPrefs() {
 	greenEnd = Number(prefsFile.readln());
 	blueEnd = Number(prefsFile.readln());
 
+	HstartSave = Number(prefsFile.readln());
+	SstartSave = Number(prefsFile.readln());
+	LstartSave = Number(prefsFile.readln());
+
+	HendSave = Number(prefsFile.readln());
+	SendSave = Number(prefsFile.readln());
+	LendSave = Number(prefsFile.readln());
+
 	steps = Number(prefsFile.readln());
+	colorName = String(prefsFile.readln());
+	checkWidth = String(prefsFile.readln());
+	tableWidth = Number(prefsFile.readln());
 	tableHeight = Number(prefsFile.readln());
 
 	prefsFile.close();
 }
 
-// Add color to the document  ------------------------------------------------------
+
+
+// FUNCTION: ADD COLOR TO DOC //
+
+
 function addColor(R, G, B) {
 	var newColor = theDoc.colors.add();
 	var cName = String(R + "/" + G + "/" + B);
-
-
 	try {
 		with(newColor) {
 			space = ColorSpace.rgb;
 			colorValue = [R, G, B];
 			name = cName;
+			model = ColorModel.process;
 		}
 	} catch (e) { // Color was already in document, delete the new one.
 		newColor.remove();
 	}
-
-
 	return cName;
-
 }
 
-// Remove duplicates  ------------------------------------------------------
+
+
+// FUNCTION: REMOVE DUPLICATES //
+
+
 function eliminateDuplicates(arr) {
 	var i,
 		len = arr.length,
 		out = [],
 		obj = {};
-
 	for (i = 0; i < len; i++) {
 		obj[arr[i]] = 0;
 	}
@@ -377,7 +870,10 @@ function eliminateDuplicates(arr) {
 	return out;
 }
 
-// Calculate brightness  ------------------------------------------------------
+
+// FUNCTION: CALCULATE BRIGHTNESS //
+
+
 function calcBrightness(color) {
 	var c = String(color);
 	var splitString = c.split("/");
@@ -390,4 +886,184 @@ function calcBrightness(color) {
 		r * r * .299 +
 		g * g * .587 +
 		b * b * .114);
+}
+
+
+// FUNCTION: CALCULATE HSL //
+
+
+//Converts an RGB color value to HSL. Conversion formula, adapted from http://en.wikipedia.org/wiki/HSL_color_space.
+function rgbToHsl(r, g, b) {
+	var r1 = r / 255;
+	var g1 = g / 255;
+	var b1 = b / 255;
+
+	var maxColor = Math.max(r1, g1, b1);
+	var minColor = Math.min(r1, g1, b1);
+	//Calculate L:
+	var L = (maxColor + minColor) / 2;
+	var S = 0;
+	var H = 0;
+	if (maxColor != minColor) {
+		//Calculate S:
+		if (L < 0.5) {
+			S = (maxColor - minColor) / (maxColor + minColor);
+		} else {
+			S = (maxColor - minColor) / (2.0 - maxColor - minColor);
+		}
+		//Calculate H:
+		if (r1 == maxColor) {
+			H = (g1 - b1) / (maxColor - minColor);
+		} else if (g1 == maxColor) {
+			H = 2.0 + (b1 - r1) / (maxColor - minColor);
+		} else {
+			H = 4.0 + (r1 - g1) / (maxColor - minColor);
+		}
+	}
+
+	L = L * 100;
+	S = S * 100;
+	H = H * 60;
+	if (H < 0) {
+		H += 360;
+	}
+	var result = [H, S, L];
+	return result;
+}
+
+
+// FUNCTION: CALCULATE RGB //
+
+
+//Converts an HSV color value to RGB. Conversion formula, adapted from http://en.wikipedia.org/wiki/HSV_color_space.
+function hslTorgb(h1, s1, l1) {
+	var h = h1 / 360;
+	var s = s1 / 100;
+	var l = l1 / 100;
+
+	var r, g, b;
+
+	if (s == 0) {
+		r = g = b = l; // achromatic
+	} else {
+		var hue2rgb = function hue2rgb(p, q, t) {
+			if (t < 0) t += 1;
+			if (t > 1) t -= 1;
+			if (t < 1 / 6) return p + (q - p) * 6 * t;
+			if (t < 1 / 2) return q;
+			if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+			return p;
+		}
+
+		var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+		var p = 2 * l - q;
+		r = hue2rgb(p, q, h + 1 / 3);
+		g = hue2rgb(p, q, h);
+		b = hue2rgb(p, q, h - 1 / 3);
+	}
+
+	return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+	//return [r, g, b];
+}
+
+
+
+// FUNCTION: CHANGE COLORS //
+
+
+function calculateAll(color1, color2, color3, type) {
+	if (type == "rgb") {
+		var StartColorHSL = rgbToHsl(color1 * 255, color2 * 255, color3 * 255);
+		StartColorH = Math.round(StartColorHSL[0]);
+		StartColorS = Math.round(StartColorHSL[1]);
+		StartColorL = Math.round(StartColorHSL[2]);
+
+		sliderH.value = StartColorH;
+		sliderS.value = StartColorS;
+		sliderL.value = StartColorL;
+
+		HStart.text = StartColorH;
+		SStart.text = StartColorS;
+		LStart.text = StartColorL;
+	}
+	if (type == "rgb2") {
+		var EndColorHSL = rgbToHsl(color1 * 255, color2 * 255, color3 * 255);
+		EndColorH = Math.round(EndColorHSL[0]);
+		EndColorS = Math.round(EndColorHSL[1]);
+		EndColorL = Math.round(EndColorHSL[2]);
+
+		sliderH2.value = EndColorH;
+		sliderS2.value = EndColorS;
+		sliderL2.value = EndColorL;
+
+		HEnd.text = EndColorH;
+		SEnd.text = EndColorS;
+		LEnd.text = EndColorL;
+	}
+	if (type == "hsl") {
+		var StartColorRGB = hslTorgb(color1, color2, color3);
+		StartColorRed = StartColorRGB[0] / 255;
+		StartColorGreen = StartColorRGB[1] / 255;
+		StartColorBlue = StartColorRGB[2] / 255;
+
+		sliderRed.value = StartColorRed * 255;
+		sliderGreen.value = StartColorGreen * 255;
+		sliderBlue.value = StartColorBlue * 255;
+
+		NEWredStart.text = StartColorRed * 255;
+		NEWgreenStart.text = StartColorGreen * 255;
+		NEWblueStart.text = StartColorBlue * 255;
+	}
+	if (type == "hsl2") {
+		var EndColorRGB = hslTorgb(color1, color2, color3);
+		EndColorRed = EndColorRGB[0] / 255;
+		EndColorGreen = EndColorRGB[1] / 255;
+		EndColorBlue = EndColorRGB[2] / 255;
+
+		sliderRed2.value = EndColorRed * 255;
+		sliderGreen2.value = EndColorGreen * 255;
+		sliderBlue2.value = EndColorBlue * 255;
+
+		NEWredEnd.text = EndColorRed * 255;
+		NEWgreenEnd.text = EndColorGreen * 255;
+		NEWblueEnd.text = EndColorBlue * 255;
+	}
+}
+
+
+// FUNCTION: UPDATE SWATCH COLOR //
+
+
+function updateStatus(swatch, color1, color2, color3) {
+	swatch.graphics.foregroundColor = swatch.graphics.newPen(swatch.graphics.PenType.SOLID_COLOR, [color1, color2, color3], 1);
+	swatch.graphics.backgroundColor = swatch.graphics.newBrush(swatch.graphics.BrushType.SOLID_COLOR, [color1, color2, color3], 1);
+}
+
+
+// FUNCTION: CHECK INPUT FORMAT //
+
+
+function checkFormat(element, type) {
+	if (type == "rgb") {
+		if (element.text.length > 3 || element.text > 255 || isNaN(element.text)) {
+			element.graphics.backgroundColor = element.graphics.newBrush(element.graphics.BrushType.SOLID_COLOR, [.9, .4, .3], 1);
+		} else {
+			element.graphics.backgroundColor = element.graphics.newBrush(element.graphics.BrushType.SOLID_COLOR, [1, 1, 1], 1);
+		}
+	}
+	if (type == "h") {
+		if (element.text.length > 3 || element.text > 360 || isNaN(element.text)) {
+			element.graphics.backgroundColor = element.graphics.newBrush(element.graphics.BrushType.SOLID_COLOR, [.9, .4, .3], 1);
+		} else {
+			element.graphics.backgroundColor = element.graphics.newBrush(element.graphics.BrushType.SOLID_COLOR, [1, 1, 1], 1);
+
+		}
+	}
+	if (type == "sl") {
+		if (element.text.length > 3 || element.text > 100 || isNaN(element.text)) {
+			element.graphics.backgroundColor = element.graphics.newBrush(element.graphics.BrushType.SOLID_COLOR, [.9, .4, .3], 1);
+		} else {
+			element.graphics.backgroundColor = element.graphics.newBrush(element.graphics.BrushType.SOLID_COLOR, [1, 1, 1], 1);
+		}
+	}
 }
