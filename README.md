@@ -9,6 +9,7 @@ This script calculates intervals between two RGB colors, creates swatches for th
 - If the user enters an invalid number in the RGB or HSL text boxes (e.g. the user enters more than three numbers or a number greater than 255 in the RGB box), the box will turn red.
 - The user chooses the height of the table.
 - The user may choose to enter in a particular table width OR allow the script to calculate the page width (allowing for the page margins) and create a table that fills that width.
+- The dialog stores the entries from the user's last gradient and recalls it for next time.
 
 ![Gradient Table Dialog Screenshot](https://cloud.githubusercontent.com/assets/13002217/12951646/521e51b4-cfe1-11e5-97ca-66362fb58df1.png)
 
@@ -21,7 +22,7 @@ Duplicate swatches are automatically detected and deleted.
 - The “title cell”, the left-most column, is not given a background color. It includes the user’s chosen name for the gradient AND the date the gradient was created.
 - The text frame is automatically fitted to the table.
 
-Yes, there are lots of little steps, so the script features an UNDO function as well! 
+Yes, there are lots of little steps, so the script features an UNDO function as well!
 
 Hope this is useful, and let me know if you have any suggestions or edits.
 
